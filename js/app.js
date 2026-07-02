@@ -27,3 +27,8 @@ UI.refreshCoins();
 Aquarium.start();
 Timer.render();
 Shop.render();
+
+// offline cache — lets the home-screen app launch without a connection
+if ("serviceWorker" in navigator) {
+  navigator.serviceWorker.register("sw.js").catch(() => { /* http or unsupported */ });
+}

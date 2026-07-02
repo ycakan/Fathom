@@ -39,6 +39,33 @@ soft sense of progress without demanding attention. It is a focus space for deep
 work, study sessions, reading, writing, or any stretch of time where you want the
 screen to support concentration instead of compete with it.
 
+## Use it on your phone
+
+<img src="icons/icon-180.png" width="96" alt="Fathom app icon — a pale fish swimming toward a gold coin" align="right">
+
+Fathom installs as a home-screen web app — fullscreen, with its own icon, no
+browser chrome, and no App Store required.
+
+**iPhone / iPad**
+
+1. Open [ycakan.github.io/Fathom](https://ycakan.github.io/Fathom/) in **Safari**
+2. Tap **Share** → **Add to Home Screen** → **Add**
+
+**Android**: open the same link in Chrome and choose **Install app** from the
+menu.
+
+Good to know:
+
+- **Works offline** — a service worker caches the app after the first visit, so
+  it launches even in airplane mode.
+- **Your tank lives on the device.** The installed app has its own storage,
+  separate from the browser tab version, and is exempt from Safari's periodic
+  website-data cleanup.
+- **Sessions survive closing the app** — the timer is timestamp-based, so
+  locking the phone or switching apps doesn't lose progress. While a session
+  runs, the screen stays awake.
+- **Updates arrive automatically** the next time you launch the app online.
+
 ## License
 
 MIT
