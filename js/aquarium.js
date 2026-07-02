@@ -42,10 +42,20 @@ const Aquarium = (() => {
 
   /* ---------- environment setup ---------- */
 
+  // Shrink creatures on small screens so an orca doesn't fill an iPhone.
+  let fitK = 1;
+
   function resize() {
-    dpr = Math.min(window.devicePixelRatio || 1, 2);
-    W = window.innerWidth;
-    H = window.innerHeight;
+    const newDpr = Math.min(window.devicePixelRatio || 1, 2);
+    const newW = window.innerWidth;
+    const newH = window.innerHeight;
+    // iOS fires viewport resizes for URL-bar and keyboard changes; don't
+    // re-seed the scenery unless the canvas really changed.
+    if (newW === W && newH === H && newDpr === dpr) return;
+    dpr = newDpr;
+    W = newW;
+    H = newH;
+    fitK = Math.max(0.58, Math.min(1, W / 1050));
     canvas.width = W * dpr;
     canvas.height = H * dpr;
     canvas.style.width = W + "px";
@@ -215,7 +225,7 @@ const Aquarium = (() => {
         if (c.baseY < top) { c.baseY = top; c.drift = Math.abs(c.drift); }
         if (c.baseY > bot) { c.baseY = bot; c.drift = -Math.abs(c.drift); }
         c.y = c.baseY + Math.sin(t * c.vf + c.ph) * c.va;
-        const m = sp.size * c.scale * 0.68;
+        const m = sp.size * c.scale * fitK * 0.68;
         if (c.x > W - m) c.dir = -1;
         if (c.x < m) c.dir = 1;
       } else if (b === "jelly") {
@@ -237,7 +247,7 @@ const Aquarium = (() => {
         if (c.baseY < top) { c.baseY = top; c.drift = Math.abs(c.drift); }
         if (c.baseY > bot) { c.baseY = bot; c.drift = -Math.abs(c.drift); }
         c.y = c.baseY + Math.sin(t * c.vf + c.ph) * c.va;
-        const m = sp.size * c.scale * 0.6;
+        const m = sp.size * c.scale * fitK * 0.6;
         if (c.x > W - m) c.dir = -1;
         if (c.x < m) c.dir = 1;
         if (b === "swim" && Math.random() < dt * 0.02) c.dir *= -1;
@@ -390,8 +400,8 @@ const Aquarium = (() => {
     if (c.offsets) {
       for (const m of c.offsets) {
         ctx.save();
-        ctx.translate(c.x + m.dx * c.face + Math.sin(t * 2.6 + m.ph) * 3, c.y + m.dy + Math.sin(t * 3.1 + m.ph) * 2.5);
-        ctx.scale(c.scale * m.sc * (c.face >= 0 ? 1 : -1), c.scale * m.sc);
+        ctx.translate(c.x + m.dx * c.face * fitK + Math.sin(t * 2.6 + m.ph) * 3, c.y + m.dy * fitK + Math.sin(t * 3.1 + m.ph) * 2.5);
+        ctx.scale(c.scale * fitK * m.sc * (c.face >= 0 ? 1 : -1), c.scale * fitK * m.sc);
         ctx.rotate(wobble * (c.face >= 0 ? 1 : -1));
         sp.draw(ctx, { ...o, ph: m.ph });
         ctx.restore();
@@ -402,7 +412,7 @@ const Aquarium = (() => {
     ctx.save();
     ctx.translate(c.x, c.y);
     const fx = sp.behavior === "jelly" ? 1 : (Math.abs(c.face) < 0.12 ? (c.face < 0 ? -0.12 : 0.12) : c.face);
-    ctx.scale(c.scale * fx * dragonScale, c.scale * dragonScale);
+    ctx.scale(c.scale * fitK * fx * dragonScale, c.scale * fitK * dragonScale);
     ctx.rotate((wobble + dragonRoll) * (fx >= 0 ? 1 : -1));
     sp.draw(ctx, o);
     ctx.restore();
@@ -496,8 +506,10 @@ const Aquarium = (() => {
     // nearest creatures drawn last are visually on top — search from the end
     for (let i = creatures.length - 1; i >= 0; i--) {
       const c = creatures[i];
-      let r = c.sp.size * c.scale * 0.55;
-      if (c.offsets) r = c.sp.size * c.scale * 2;
+      let r = c.sp.size * c.scale * fitK * 0.55;
+      if (c.offsets) r = c.sp.size * c.scale * fitK * 2;
+      // keep small creatures comfortably tappable on touch screens
+      r = Math.max(r, 22);
       const dx = mx - c.x, dy = my - c.y;
       if (dx * dx + dy * dy < r * r) return c;
     }
@@ -596,7 +608,7 @@ const Aquarium = (() => {
         c.dir = mx < c.x ? 1 : -1;
         bubbles(c.x, c.y, 3);
     }
-    showLabel(sp.name, c.x, c.y - sp.size * c.scale * 0.5 - 14);
+    showLabel(sp.name, c.x, c.y - sp.size * c.scale * fitK * 0.5 - 14);
   }
 
   function showLabel(text, x, y) {
@@ -623,6 +635,9 @@ const Aquarium = (() => {
   });
 
   window.addEventListener("resize", resize);
+  // iOS: rotation and URL-bar collapse don't always fire a plain resize
+  window.addEventListener("orientationchange", () => setTimeout(resize, 250));
+  if (window.visualViewport) window.visualViewport.addEventListener("resize", resize);
 
   /* ---------- boot ---------- */
 

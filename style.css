@@ -17,6 +17,10 @@ html, body {
   color: var(--ink);
   -webkit-font-smoothing: antialiased;
   user-select: none;
+  -webkit-user-select: none;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+  overscroll-behavior: none;
 }
 
 #tank {
@@ -43,7 +47,10 @@ html, body {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 22px 28px;
+  padding: calc(22px + env(safe-area-inset-top, 0px))
+           calc(28px + env(safe-area-inset-right, 0px))
+           22px
+           calc(28px + env(safe-area-inset-left, 0px));
   pointer-events: none;
   z-index: 10;
 }
@@ -289,6 +296,10 @@ button {
   left: 50%;
   bottom: 18%;
   transform: translateX(-50%);
+  width: max-content;
+  max-width: 86vw;
+  text-align: center;
+  line-height: 1.9;
   font-size: 12px;
   font-weight: 300;
   letter-spacing: 0.2em;
@@ -296,7 +307,6 @@ button {
   z-index: 4;
   pointer-events: none;
   animation: breathe 5s ease-in-out infinite;
-  white-space: nowrap;
 }
 @keyframes breathe {
   0%, 100% { opacity: 0.45; }
@@ -312,12 +322,14 @@ button {
   max-width: 92vw;
   background: var(--panel);
   border-left: 1px solid var(--hairline);
+  -webkit-backdrop-filter: blur(6px);
   backdrop-filter: blur(6px);
   z-index: 20;
   display: flex;
   flex-direction: column;
   transform: translateX(105%);
   transition: transform 0.4s cubic-bezier(0.22, 1, 0.36, 1);
+  padding-right: env(safe-area-inset-right, 0px);
 }
 .shop.open { transform: translateX(0); }
 
@@ -325,7 +337,7 @@ button {
   display: flex;
   align-items: center;
   gap: 14px;
-  padding: 22px 22px 16px;
+  padding: calc(22px + env(safe-area-inset-top, 0px)) 22px 16px;
   border-bottom: 1px solid var(--hairline);
 }
 .shop-title {
@@ -428,7 +440,7 @@ button {
   align-items: center;
   justify-content: space-between;
   gap: 10px;
-  padding: 14px 20px;
+  padding: 14px 20px calc(14px + env(safe-area-inset-bottom, 0px));
   border-top: 1px solid var(--hairline);
   font-size: 10px;
   font-weight: 300;
@@ -480,3 +492,58 @@ button {
 }
 .toast.show { opacity: 1; }
 .toast .coin-dot { vertical-align: middle; }
+
+/* ---------- touch & small screens ---------- */
+
+/* On touch devices an input under 16px makes iOS zoom the page on focus. */
+@media (pointer: coarse) {
+  .custom-chip input {
+    font-size: 16px;
+    width: 54px;
+  }
+}
+
+@media (max-width: 640px) {
+  .hud {
+    padding: calc(12px + env(safe-area-inset-top, 0px))
+             calc(14px + env(safe-area-inset-right, 0px))
+             12px
+             calc(16px + env(safe-area-inset-left, 0px));
+  }
+  .brand {
+    font-size: 13px;
+    letter-spacing: 0.3em;
+  }
+  .hud-right { gap: 8px; }
+  .hud-right .hud-btn,
+  .hud-right button.hud-btn,
+  .hud-right a.hud-btn {
+    width: auto !important;
+    min-width: 0 !important;
+    max-width: none !important;
+    flex: 0 0 auto !important;
+    height: 38px !important;
+    min-height: 38px !important;
+    max-height: 38px !important;
+    padding: 0 12px !important;
+    font-size: 10px;
+    letter-spacing: 0.16em;
+  }
+  .coins { font-size: 14px; gap: 6px; }
+
+  .timer-panel { width: min(94vw, 560px); }
+  .chips { gap: 8px; margin-bottom: 24px; }
+  .chip { padding: 10px 12px; }
+  .progress { width: 70vw; }
+  .run-controls .ghost-btn { padding: 12px 18px; }
+  .note { letter-spacing: 0.1em; }
+
+  .empty-hint { bottom: 22%; }
+
+  .shop {
+    width: 100%;
+    max-width: 100%;
+    border-left: none;
+  }
+  .buy-btn { padding: 10px 16px; }
+}

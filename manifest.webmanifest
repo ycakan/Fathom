@@ -1,0 +1,16 @@
+{
+  "name": "Fathom — Deep-Sea Focus Aquarium",
+  "short_name": "Fathom",
+  "description": "Run focus sessions, earn gold coins, and fill a deep-sea aquarium with creatures.",
+  "start_url": ".",
+  "scope": ".",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#10283a",
+  "theme_color": "#10283a",
+  "icons": [
+    { "src": "icons/icon-180.png", "sizes": "180x180", "type": "image/png" },
+    { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png" }
+  ]
+}

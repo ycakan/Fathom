@@ -59,6 +59,33 @@ const Timer = (() => {
     }
   }
 
+  /* ---------- screen wake lock ---------- */
+
+  // Keep the screen on while a session runs (the timer itself is
+  // timestamp-based, so it stays correct even if the lock is unavailable).
+  let wakeLock = null;
+
+  async function acquireWakeLock() {
+    if (!("wakeLock" in navigator)) return;
+    try {
+      wakeLock = await navigator.wakeLock.request("screen");
+    } catch (e) { wakeLock = null; /* low battery or not allowed */ }
+  }
+
+  function releaseWakeLock() {
+    if (wakeLock) {
+      try { wakeLock.release(); } catch (e) { /* already released */ }
+      wakeLock = null;
+    }
+  }
+
+  // The lock is dropped automatically when the tab is hidden; re-acquire
+  // when the user comes back to a running session.
+  document.addEventListener("visibilitychange", () => {
+    const sess = s();
+    if (document.visibilityState === "visible" && sess && !sess.pausedAt) acquireWakeLock();
+  });
+
   /* ---------- session lifecycle ---------- */
 
   function start() {
@@ -74,6 +101,7 @@ const Timer = (() => {
       pausedTotal: 0,
     };
     Store.save();
+    acquireWakeLock();
     render();
   }
 
@@ -83,8 +111,10 @@ const Timer = (() => {
     if (sess.pausedAt) {
       sess.pausedTotal += Date.now() - sess.pausedAt;
       sess.pausedAt = null;
+      acquireWakeLock();
     } else {
       sess.pausedAt = Date.now();
+      releaseWakeLock();
     }
     Store.save();
     render();
@@ -102,6 +132,7 @@ const Timer = (() => {
     Store.data.lifetimeCoins += coins;
     Store.data.session = null;
     Store.save();
+    releaseWakeLock();
 
     UI.refreshCoins();
     document.title = "Fathom — Deep-Sea Focus Aquarium";
@@ -206,6 +237,9 @@ const Timer = (() => {
   endBtn.addEventListener("click", () => finish(false));
 
   setInterval(tick, 250);
+
+  // page (re)opened with a session already running
+  if (s() && !s().pausedAt) acquireWakeLock();
 
   return { render };
 })();
