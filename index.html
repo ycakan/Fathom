@@ -1,0 +1,78 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Fathom — Deep-Sea Focus Aquarium</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' fill='%23060b10'/%3E%3Ccircle cx='16' cy='16' r='6' fill='%23d8b06a'/%3E%3C/svg%3E">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <canvas id="tank"></canvas>
+  <div id="vignette"></div>
+
+  <header class="hud">
+    <div class="brand">F&nbsp;A&nbsp;T&nbsp;H&nbsp;O&nbsp;M</div>
+    <div class="hud-right">
+      <div class="coins"><span class="coin-dot"></span><span id="coinCount">0</span></div>
+      <button id="shopToggle" class="ghost-btn hud-btn">SHOP</button>
+      <a class="ghost-btn hud-btn star-link" href="https://github.com/ycakan/Fathom" target="_blank" rel="noopener noreferrer" aria-label="Star Fathom on GitHub">STAR <span aria-hidden="true">⭐</span></a>
+    </div>
+  </header>
+
+  <div id="emptyHint" class="empty-hint hidden">
+    the water is still &mdash; focus to earn coins and fill the depths
+  </div>
+
+  <section id="timerPanel" class="timer-panel">
+    <div id="setupView">
+      <div class="chips">
+        <button class="chip selected" data-min="15">15 MIN</button>
+        <button class="chip" data-min="30">30 MIN</button>
+        <button class="chip" data-min="60">60 MIN</button>
+        <button class="chip" data-min="90">90 MIN</button>
+        <div class="chip custom-chip" id="customChip">
+          <input id="customMin" type="number" min="5" max="360" placeholder="45">
+          <span>MIN</span>
+        </div>
+      </div>
+      <button id="startBtn" class="primary-btn">B E G I N</button>
+      <div class="note" id="setupNote">1 <span class="coin-dot small"></span> per 15 minutes of focus</div>
+    </div>
+
+    <div id="runView" class="hidden">
+      <div id="timeLeft" class="time">15:00</div>
+      <div class="progress"><div id="progressFill"></div></div>
+      <div class="run-controls">
+        <button id="pauseBtn" class="ghost-btn">PAUSE</button>
+        <button id="endBtn" class="ghost-btn danger">END</button>
+      </div>
+      <div id="sessionCoins" class="note"></div>
+    </div>
+  </section>
+
+  <aside id="shopPanel" class="shop">
+    <div class="shop-head">
+      <span class="shop-title">S H O P</span>
+      <div class="coins small"><span class="coin-dot small"></span><span id="coinCountShop">0</span></div>
+      <button id="shopClose" class="ghost-btn">&times;</button>
+    </div>
+    <div id="shopList" class="shop-list"></div>
+    <div class="shop-foot">
+      <span id="statsLine"></span>
+      <button id="resetBtn" class="ghost-btn danger tiny">reset all</button>
+    </div>
+  </aside>
+
+  <div id="label" class="creature-label hidden"></div>
+  <div id="toast" class="toast hidden"></div>
+
+  <script src="js/state.js"></script>
+  <script src="js/creatures.js"></script>
+  <script src="js/aquarium.js"></script>
+  <script src="js/timer.js"></script>
+  <script src="js/shop.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>
