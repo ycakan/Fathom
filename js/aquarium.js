@@ -216,6 +216,19 @@ const Aquarium = (() => {
         c.y = c.baseY + Math.sin(t * c.vf + c.ph) * c.va * 0.35;
         if (c.x < 44) c.dir = 1;
         if (c.x > W - 44) c.dir = -1;
+      } else if (b === "seahorse") {
+        // hovers upright with a gentle vertical bob and slow sideways drift
+        c.x += spd * dt * c.dir * 0.4;
+        c.baseY += c.drift * dt * 0.5;
+        if (Math.random() < dt * 0.05) c.drift = rand(-2, 2);
+        const top = sp.band[0] * H;
+        const bot = Math.min(sp.band[1] * H, floorY(c.x) - sp.size * c.scale * fitK * 0.5);
+        if (c.baseY < top) { c.baseY = top; c.drift = Math.abs(c.drift); }
+        if (c.baseY > bot) { c.baseY = bot; c.drift = -Math.abs(c.drift); }
+        c.y = c.baseY + Math.sin(t * 1.3 + c.ph) * (c.va * 0.8 + 4);
+        if (c.x < 40) c.dir = 1;
+        if (c.x > W - 40) c.dir = -1;
+        if (Math.random() < dt * 0.01) c.dir *= -1;
       } else if (b === "dragon") {
         const burst = c.dragonAnim === "dash" || c.dragonAnim === "eclipse" ? 1.4 : 0.7;
         c.x += spd * dt * c.dir * burst;
@@ -590,6 +603,11 @@ const Aquarium = (() => {
       case "jelly":
         c.fleeT = 1.6;
         bubbles(c.x, c.y - 10, 2);
+        break;
+      case "seahorse":
+        c.fleeT = 0.9;
+        c.dir = mx < c.x ? 1 : -1;
+        bubbles(c.x, c.y - sp.size * c.scale * 0.3, 3);
         break;
       case "lurk":
         c.glowT = 2.2;

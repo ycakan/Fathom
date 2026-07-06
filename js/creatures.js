@@ -260,6 +260,77 @@ const Creatures = (() => {
       },
     },
     {
+      id: "seahorse", name: "Seahorse", price: 5, size: 54,
+      band: [0.42, 0.86], speed: 10, behavior: "seahorse",
+      desc: "Hovers upright, its tail ready to anchor to a reed.",
+      draw(ctx, o) {
+        const s = this.size;
+        const finWave = o.t * 6 + o.ph;
+
+        // dorsal fin on the back, fluttering (drawn behind the body, tapered
+        // at both ends so it hugs the spine like a leaf rather than a slab)
+        ctx.fillStyle = o.body;
+        ctx.beginPath();
+        ctx.moveTo(-s * 0.08, -s * 0.16);
+        for (let i = 0; i <= 8; i++) {
+          const k = i / 8;
+          const yy = -s * 0.16 + k * s * 0.30;
+          const reach = (s * 0.055 + Math.sin(finWave + k * 4) * s * 0.02) * Math.sin(Math.PI * k);
+          ctx.lineTo(-s * 0.09 - reach, yy);
+        }
+        ctx.lineTo(-s * 0.08, s * 0.14);
+        ctx.closePath();
+        ctx.fill();
+
+        // main body: upright S-curve, snout upper-right, tail curled below
+        ctx.beginPath();
+        ctx.moveTo(s * 0.36, -s * 0.33);                                 // snout tip
+        ctx.quadraticCurveTo(s * 0.16, -s * 0.27, s * 0.09, -s * 0.21);  // snout underside → chin
+        ctx.quadraticCurveTo(s * 0.05, -s * 0.15, s * 0.13, -s * 0.09);  // throat → chest
+        ctx.quadraticCurveTo(s * 0.19, s * 0.0, s * 0.13, s * 0.13);     // belly bulge → lower belly
+        ctx.quadraticCurveTo(s * 0.07, s * 0.22, s * 0.06, s * 0.28);    // tail root
+        ctx.quadraticCurveTo(s * 0.14, s * 0.34, s * 0.07, s * 0.42);    // outer curl → bottom
+        ctx.quadraticCurveTo(s * 0.0, s * 0.46, -s * 0.04, s * 0.38);    // tail tip
+        ctx.quadraticCurveTo(s * 0.02, s * 0.32, -s * 0.02, s * 0.24);   // inner tail
+        ctx.quadraticCurveTo(-s * 0.08, s * 0.12, -s * 0.09, -s * 0.02); // back lower
+        ctx.quadraticCurveTo(-s * 0.10, -s * 0.16, -s * 0.05, -s * 0.27);// back upper → nape
+        ctx.quadraticCurveTo(-s * 0.02, -s * 0.34, s * 0.04, -s * 0.38); // back of head → crown
+        ctx.quadraticCurveTo(s * 0.12, -s * 0.40, s * 0.36, -s * 0.33);  // brow → top of snout
+        ctx.closePath();
+        ctx.fillStyle = o.body;
+        ctx.fill();
+        rim(ctx, o, 1);
+
+        // coronet spikes
+        ctx.strokeStyle = o.body;
+        ctx.lineWidth = 1.6;
+        for (let i = 0; i < 3; i++) {
+          const bx = -s * 0.02 + i * s * 0.035;
+          ctx.beginPath();
+          ctx.moveTo(bx, -s * 0.37);
+          ctx.lineTo(bx - s * 0.012, -s * 0.45);
+          ctx.stroke();
+        }
+
+        // body ridge segments
+        ctx.strokeStyle = o.rim;
+        ctx.lineWidth = 1;
+        for (let i = 0; i < 4; i++) {
+          const yy = -s * 0.12 + i * s * 0.09;
+          ctx.beginPath();
+          ctx.moveTo(-s * 0.06, yy + s * 0.02);
+          ctx.quadraticCurveTo(s * 0.05, yy, s * 0.12, yy - s * 0.01);
+          ctx.stroke();
+        }
+
+        // eye
+        ctx.fillStyle = o.rim;
+        ctx.beginPath();
+        ctx.arc(s * 0.08, -s * 0.28, 1.7, 0, Math.PI * 2);
+        ctx.fill();
+      },
+    },
+    {
       id: "turtle", name: "Sea Turtle", price: 5, size: 88,
       band: [0.2, 0.6], speed: 18, behavior: "swim",
       desc: "Glides through open water without a care.",

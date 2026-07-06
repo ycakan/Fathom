@@ -20,8 +20,8 @@ little more tactile.
   Pause and resume any time; only unpaused focus time counts.
 - **Distraction-free rewards** - every 15 minutes earns 1 coin, with rewards
   quietly banked in the background.
-- **A growing aquarium** - spend coins on 16 sea creatures, from minnows and
-  jellyfish to axolotls, an orca, and a rare dragon fish.
+- **A growing aquarium** - spend coins on 17 sea creatures, from minnows and
+  jellyfish to seahorses, axolotls, an orca, and a rare dragon fish.
 - **Depth decorations** - unlock one-time fauna and shipwreck finds like kelp
   groves, coral fans, tube worm colonies, anchors, broken skiffs, and sunken
   hulls.
