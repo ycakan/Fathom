@@ -16,13 +16,14 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
-  deploy:
+  # Build and deploy are split into two jobs on purpose: the artifact is
+  # uploaded only in `build`, so re-running a failed `deploy` never uploads a
+  # second `github-pages` artifact (which would fail with "Multiple artifacts
+  # named github-pages were unexpectedly found for this workflow run").
+  build:
+    runs-on: ubuntu-latest
     env:
       PAGES_TOKEN: ${{ secrets.PAGES_TOKEN }}
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
-    runs-on: ubuntu-latest
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -43,6 +44,13 @@ jobs:
         with:
           path: .
 
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
       - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v4
