@@ -62,6 +62,7 @@ const Aquarium = (() => {
     canvas.style.height = H + "px";
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
     buildEnvironment();
+    reflowCreatures();
   }
 
   function buildEnvironment() {
@@ -106,6 +107,89 @@ const Aquarium = (() => {
     let y = H * 0.955;
     for (const s of floorSeed) y -= Math.abs(Math.sin(x * s.f * Math.PI * 2 + s.p)) * s.a;
     return y;
+  }
+
+  /* ---------- keeping creatures within the visible tank ---------- */
+
+  // Measure a species' drawn half-width/half-height in unit coordinates
+  // (before per-instance scaling). Cached. Glows are ignored via a high alpha
+  // threshold so only the solid silhouette counts, and a few animation frames
+  // are sampled so wiggling fins and tails are included.
+  const extentCache = {};
+  function halfExtent(sp) {
+    if (extentCache[sp.id]) return extentCache[sp.id];
+    const ms = Math.min(1, 240 / sp.size);         // cap the measuring canvas size
+    const dim = Math.ceil(sp.size * 2.0 * ms) + 48;
+    const off = document.createElement("canvas");
+    off.width = dim; off.height = dim;
+    const c = off.getContext("2d", { willReadFrequently: true });
+    let hx = sp.size * 0.5, hy = sp.size * 0.5;
+    for (const t of [0, 0.4, 0.9, 1.5]) {
+      c.setTransform(1, 0, 0, 1, 0, 0);
+      c.clearRect(0, 0, dim, dim);
+      c.setTransform(ms, 0, 0, ms, dim / 2, dim / 2);
+      sp.draw(c, {
+        t, ph: 0, body: "#ffffff", rim: "rgba(255,255,255,1)",
+        glowT: 0, walk: 1, claw: 1, dragonAnim: "flare", dragonP: 0.5,
+      });
+      const a = c.getImageData(0, 0, dim, dim).data;
+      for (let y = 0; y < dim; y++) {
+        for (let x = 0; x < dim; x++) {
+          if (a[(y * dim + x) * 4 + 3] > 128) {
+            hx = Math.max(hx, Math.abs(x - dim / 2) / ms);
+            hy = Math.max(hy, Math.abs(y - dim / 2) / ms);
+          }
+        }
+      }
+    }
+    extentCache[sp.id] = { hx: hx + 4, hy: hy + 4 };
+    return extentCache[sp.id];
+  }
+
+  // Effective on-screen half-extents (px) for this instance.
+  function viewExtent(c) {
+    const sp = c.sp;
+    const e = halfExtent(sp);
+    if (sp.school) {
+      // a school spreads across its per-fish offsets (scaled by fitK only)
+      return {
+        hx: (sp.size * 1.5 + e.hx) * fitK,
+        hy: (sp.size * 0.9 + e.hy) * fitK,
+      };
+    }
+    return { hx: e.hx * c.scale * fitK, hy: e.hy * c.scale * fitK };
+  }
+
+  // Horizontal turn margin: how close a centre may get to a side wall before
+  // any part of the creature would cross it.
+  function hMargin(c) {
+    return Math.min(viewExtent(c).hx, W * 0.45);
+  }
+
+  // Species depth band in px, clamped so the whole creature stays on screen.
+  function vBand(c) {
+    const my = Math.min(viewExtent(c).hy + (c.va || 0), H * 0.45);
+    let top = Math.max(c.sp.band[0] * H, my);
+    let bot = Math.min(c.sp.band[1] * H, H - my);
+    if (top > bot) { const mid = (top + bot) / 2; top = mid; bot = mid; }
+    return [top, bot];
+  }
+
+  // Pull every creature back inside the tank. Called after the canvas resizes
+  // (e.g. the phone rotates), which otherwise strands them off-screen.
+  function reflowCreatures() {
+    for (const c of creatures) {
+      const b = c.sp.behavior;
+      const mx = hMargin(c);
+      c.x = Math.max(mx, Math.min(W - mx, c.x));
+      if (b === "crab" || b === "octo") {
+        c.y = floorY(c.x) - (b === "octo" ? 26 : 10) * c.scale;
+      } else {
+        const [top, bot] = vBand(c);
+        c.baseY = Math.max(top, Math.min(bot, c.baseY));
+        c.y = c.baseY;
+      }
+    }
   }
 
   /* ---------- creatures ---------- */
@@ -198,47 +282,52 @@ const Aquarium = (() => {
         c.walk = lerp(c.walk || 0, moving ? 1 : 0, Math.min(1, dt * 6));
         if (moving) c.x += spd * dt * c.dir;
         c.y = floorY(c.x) - 10 * c.scale;
-        if (c.x < 30) c.dir = 1;
-        if (c.x > W - 30) c.dir = -1;
+        const mx = hMargin(c);
+        if (c.x < mx) c.dir = 1;
+        if (c.x > W - mx) c.dir = -1;
       } else if (b === "octo") {
         c.x += spd * dt * c.dir * 0.5;
         c.y = floorY(c.x) - (26 + Math.sin(t * 0.7 + c.ph) * 7) * c.scale;
-        if (c.x < 50) c.dir = 1;
-        if (c.x > W - 50) c.dir = -1;
+        const mx = hMargin(c);
+        if (c.x < mx) c.dir = 1;
+        if (c.x > W - mx) c.dir = -1;
         if (Math.random() < dt * 0.08) c.dir *= -1;
       } else if (b === "axolotl") {
         c.x += spd * dt * c.dir * 0.42;
         c.baseY += c.drift * dt * 0.4;
         if (Math.random() < dt * 0.04) c.drift = rand(-2, 2);
-        const top = sp.band[0] * H, bot = Math.min(sp.band[1] * H, floorY(c.x) - sp.size * c.scale * 0.12);
+        const [vtop, vbot] = vBand(c);
+        const top = vtop, bot = Math.min(vbot, floorY(c.x) - sp.size * c.scale * fitK * 0.12);
         if (c.baseY < top) { c.baseY = top; c.drift = Math.abs(c.drift); }
         if (c.baseY > bot) { c.baseY = bot; c.drift = -Math.abs(c.drift); }
         c.y = c.baseY + Math.sin(t * c.vf + c.ph) * c.va * 0.35;
-        if (c.x < 44) c.dir = 1;
-        if (c.x > W - 44) c.dir = -1;
+        const mx = hMargin(c);
+        if (c.x < mx) c.dir = 1;
+        if (c.x > W - mx) c.dir = -1;
       } else if (b === "seahorse") {
         // hovers upright with a gentle vertical bob and slow sideways drift
         c.x += spd * dt * c.dir * 0.4;
         c.baseY += c.drift * dt * 0.5;
         if (Math.random() < dt * 0.05) c.drift = rand(-2, 2);
-        const top = sp.band[0] * H;
-        const bot = Math.min(sp.band[1] * H, floorY(c.x) - sp.size * c.scale * fitK * 0.5);
+        const [vtop, vbot] = vBand(c);
+        const top = vtop, bot = Math.min(vbot, floorY(c.x) - sp.size * c.scale * fitK * 0.5);
         if (c.baseY < top) { c.baseY = top; c.drift = Math.abs(c.drift); }
         if (c.baseY > bot) { c.baseY = bot; c.drift = -Math.abs(c.drift); }
         c.y = c.baseY + Math.sin(t * 1.3 + c.ph) * (c.va * 0.8 + 4);
-        if (c.x < 40) c.dir = 1;
-        if (c.x > W - 40) c.dir = -1;
+        const mx = hMargin(c);
+        if (c.x < mx) c.dir = 1;
+        if (c.x > W - mx) c.dir = -1;
         if (Math.random() < dt * 0.01) c.dir *= -1;
       } else if (b === "dragon") {
         const burst = c.dragonAnim === "dash" || c.dragonAnim === "eclipse" ? 1.4 : 0.7;
         c.x += spd * dt * c.dir * burst;
         c.baseY += c.drift * dt;
         if (Math.random() < dt * 0.04) c.drift = rand(-4, 4);
-        const top = sp.band[0] * H, bot = sp.band[1] * H;
+        const [top, bot] = vBand(c);
         if (c.baseY < top) { c.baseY = top; c.drift = Math.abs(c.drift); }
         if (c.baseY > bot) { c.baseY = bot; c.drift = -Math.abs(c.drift); }
         c.y = c.baseY + Math.sin(t * c.vf + c.ph) * c.va;
-        const m = sp.size * c.scale * fitK * 0.68;
+        const m = hMargin(c);
         if (c.x > W - m) c.dir = -1;
         if (c.x < m) c.dir = 1;
       } else if (b === "jelly") {
@@ -246,21 +335,23 @@ const Aquarium = (() => {
         c.y -= (2 + pulse * 7 + (c.fleeT > 0 ? 18 : 0)) * dt;
         c.y += 4.5 * dt; // sink baseline
         c.x += (Math.sin(t * 0.3 + c.ph) * 4 + c.drift) * dt;
-        const top = sp.band[0] * H, bot = sp.band[1] * H;
+        const [top, bot] = vBand(c);
         if (c.y < top) c.y = top;
         if (c.y > bot) c.y = bot;
-        if (c.x < -40) c.x = W + 40;
-        if (c.x > W + 40) c.x = -40;
+        // drift sideways but stay within the tank instead of wrapping off it
+        const mx = hMargin(c);
+        if (c.x < mx) { c.x = mx; c.drift = Math.abs(c.drift) || 1; }
+        if (c.x > W - mx) { c.x = W - mx; c.drift = -(Math.abs(c.drift) || 1); }
       } else {
         // swim / school / patrol / bob / lurk
         c.x += spd * dt * c.dir;
         c.baseY += c.drift * dt;
         if (Math.random() < dt * 0.05) c.drift = rand(-3, 3);
-        const top = sp.band[0] * H, bot = sp.band[1] * H;
+        const [top, bot] = vBand(c);
         if (c.baseY < top) { c.baseY = top; c.drift = Math.abs(c.drift); }
         if (c.baseY > bot) { c.baseY = bot; c.drift = -Math.abs(c.drift); }
         c.y = c.baseY + Math.sin(t * c.vf + c.ph) * c.va;
-        const m = sp.size * c.scale * fitK * 0.6;
+        const m = hMargin(c);
         if (c.x > W - m) c.dir = -1;
         if (c.x < m) c.dir = 1;
         if (b === "swim" && Math.random() < dt * 0.02) c.dir *= -1;
