@@ -39,10 +39,18 @@ jobs:
           enablement: true
           token: ${{ secrets.PAGES_TOKEN }}
 
+      # Ship only the site itself — not .git, .github, README, or LICENSE.
+      # A smaller artifact deploys faster and is less prone to the Pages
+      # backend timing out.
+      - name: Assemble site
+        run: |
+          mkdir -p _site
+          cp -r .nojekyll index.html style.css sw.js manifest.webmanifest icons js _site/
+
       - name: Upload static site
         uses: actions/upload-pages-artifact@v3
         with:
-          path: .
+          path: _site
 
   deploy:
     needs: build
